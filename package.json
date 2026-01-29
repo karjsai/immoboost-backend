@@ -1,20 +1,6 @@
 {
   "name": "immoboost-backend",
   "version": "1.0.0",
-  "description": "Backend API pour ImmoBoost Pro - Amélioration de photos immobilières",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [
-    "real-estate",
-    "photo-enhancement",
-    "ai"
-  ],
-  "author": "Adam",
-  "license": "MIT",
-  "dependencies": {
-    "openai": "^4.20.1",
-    "sharp": "^0.33.1"
-  }
+  "type": "module",
+  "dependencies": {}
 }
