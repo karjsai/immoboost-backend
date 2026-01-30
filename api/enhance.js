@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -20,15 +19,18 @@ export default async function handler(req, res) {
     }
 
     const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+    const REPLICATE_API_TOKEN = process.env.REPLICATE_API_TOKEN;
     
-    if (!OPENAI_API_KEY) {
-      return res.status(500).json({ error: 'OpenAI API key not configured' });
+    if (!OPENAI_API_KEY || !REPLICATE_API_TOKEN) {
+      return res.status(500).json({ error: 'API keys not configured' });
     }
 
-    console.log('🔍 Étape 1: Analyse avec GPT-4 Vision...');
+    console.log('🔍 ÉTAPE 1/2 : Analyse et génération prompt avec GPT-4 Vision...');
 
-    // ÉTAPE 1: Analyse avec GPT-4 Vision
-    const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // ============================================
+    // ÉTAPE 1 : GPT-4 VISION - GÉNÉRATION PROMPT
+    // ============================================
+    const gptResponse = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${OPENAI_API_KEY}`,
@@ -42,16 +44,30 @@ export default async function handler(req, res) {
             content: [
               {
                 type: 'text',
-                text: `Tu es un expert en photographie immobilière. Analyse cette photo et identifie précisément les problèmes visuels.
+                text: `Analyse cette photo immobilière et génère un prompt d'amélioration optimisé pour Stable Diffusion img2img.
 
-Réponds UNIQUEMENT avec les éléments à améliorer, sous ce format :
-- Type de pièce : [bedroom/living/kitchen/bathroom/exterior]
-- Problèmes luminosité : [trop sombre/trop claire/normal]
-- Problèmes couleurs : [terne/saturé/délavé/normal]
-- Problèmes netteté : [flou/net/normal]
-- Autres défauts : [liste les défauts visibles]
+Le prompt doit décrire la version AMÉLIORÉE de cette photo avec :
+- Corrections de luminosité et d'exposition
+- Amélioration des couleurs (saturation, balance des blancs)
+- Augmentation du contraste et de la netteté
+- Qualité professionnelle immobilière
 
-Sois concret et précis.`
+Format attendu :
+Un seul paragraphe en anglais décrivant la photo finale souhaitée.
+
+Exemple pour EXTÉRIEUR :
+"Professional real estate exterior photography, bright natural daylight, enhanced vibrant blue sky, lush green landscaping, crisp white facade, high contrast, sharp architectural details, HDR quality, magazine-worthy, photorealistic, 8k resolution"
+
+Exemple pour INTÉRIEUR :
+"Professional real estate interior photography, bright and airy atmosphere, perfect natural lighting, neutral white balance, enhanced contrast, warm inviting tones, sharp details, clean modern space, high-end staging, HDR quality, photorealistic, 8k resolution"
+
+IMPORTANT :
+- Décris la photo FINALE idéale (pas les corrections)
+- Reste naturel et réaliste
+- Qualité professionnelle immobilière
+- UN SEUL paragraphe en anglais
+
+Réponds UNIQUEMENT avec le prompt optimisé, sans explication supplémentaire.`
               },
               {
                 type: 'image_url',
@@ -63,119 +79,134 @@ Sois concret et précis.`
             ]
           }
         ],
-        max_tokens: 500,
-        temperature: 0.3
+        max_tokens: 400,
+        temperature: 0.4
       })
     });
 
-    if (!analysisResponse.ok) {
-      const errorData = await analysisResponse.json();
+    if (!gptResponse.ok) {
+      const errorData = await gptResponse.json();
       console.error('GPT-4 Vision error:', errorData);
-      throw new Error(`Analyse GPT-4 Vision failed: ${errorData.error?.message || 'Unknown error'}`);
+      throw new Error(`GPT-4 Vision failed: ${errorData.error?.message || 'Unknown error'}`);
     }
 
-    const analysisData = await analysisResponse.json();
-    const analysis = analysisData.choices[0].message.content;
+    const gptData = await gptResponse.json();
+    const enhancementPrompt = gptData.choices[0].message.content.trim();
     
-    console.log('✅ Analyse GPT-4 Vision:', analysis);
+    console.log('✅ Prompt généré:', enhancementPrompt);
 
-    // ÉTAPE 2: Créer le prompt d'amélioration DALL-E 3
-    const enhancementPrompt = createDALLEPrompt(analysis);
-    
-    console.log('🎨 Prompt DALL-E 3:', enhancementPrompt);
+    // ============================================
+    // ÉTAPE 2 : JUGGERNAUT XL V7 - AMÉLIORATION
+    // ============================================
+    console.log('✨ ÉTAPE 2/2 : Amélioration avec Juggernaut XL v7...');
 
-    // ÉTAPE 3: Générer avec DALL-E 3
-    console.log('🎨 Génération avec DALL-E 3...');
-    
-    const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
+    const replicateResponse = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Token ${REPLICATE_API_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: enhancementPrompt,
-        n: 1,
-        size: '1024x1024',
-        quality: 'hd',
-        style: 'natural'
+        version: 'bea09cf018e513cef0841719f9d94e606c873a2e8a1f45d9c3cab4f6cecf97a7',
+        input: {
+          image: image,
+          prompt: enhancementPrompt,
+          negative_prompt: "blurry, distorted, low quality, artifacts, watermark, text, oversaturated, artificial, fake, unrealistic, cartoonish, painting, drawing",
+          width: 1024,
+          height: 1024,
+          num_inference_steps: 30,
+          guidance_scale: 7.5,
+          prompt_strength: 0.15,
+          scheduler: "DPMSolverMultistep",
+          disable_safety_checker: true
+        }
       })
     });
 
-    if (!dalleResponse.ok) {
-      const errorData = await dalleResponse.json();
-      console.error('DALL-E 3 error:', errorData);
-      throw new Error(`DALL-E 3 failed: ${errorData.error?.message || 'Unknown error'}`);
+    if (!replicateResponse.ok) {
+      const errorData = await replicateResponse.json();
+      console.error('Replicate error:', errorData);
+      throw new Error(`Replicate failed: ${errorData.detail || 'Unknown error'}`);
     }
 
-    const dalleData = await dalleResponse.json();
-    const enhancedImageUrl = dalleData.data[0].url;
+    const replicateData = await replicateResponse.json();
+    let prediction = replicateData;
 
-    console.log('✅ Image améliorée générée:', enhancedImageUrl);
+    console.log('⏳ Prediction ID:', prediction.id);
 
-    // Retourner le résultat
+    // ============================================
+    // POLLING POUR RÉSULTAT
+    // ============================================
+    let attempts = 0;
+    const maxAttempts = 60; // 2 minutes max
+
+    while (
+      prediction.status !== 'succeeded' && 
+      prediction.status !== 'failed' && 
+      prediction.status !== 'canceled' &&
+      attempts < maxAttempts
+    ) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const checkResponse = await fetch(
+        `https://api.replicate.com/v1/predictions/${prediction.id}`,
+        {
+          headers: {
+            'Authorization': `Token ${REPLICATE_API_TOKEN}`,
+          }
+        }
+      );
+      
+      if (!checkResponse.ok) {
+        console.error('Failed to check prediction status');
+        throw new Error('Failed to check prediction status');
+      }
+      
+      prediction = await checkResponse.json();
+      attempts++;
+      
+      if (attempts % 5 === 0) {
+        console.log(`⏳ Traitement... (${attempts * 2}s) - Status: ${prediction.status}`);
+      }
+    }
+
+    if (prediction.status === 'failed') {
+      console.error('Prediction failed:', prediction.error);
+      throw new Error(`Enhancement failed: ${prediction.error || 'Unknown error'}`);
+    }
+
+    if (prediction.status === 'canceled') {
+      throw new Error('Enhancement was canceled');
+    }
+
+    if (prediction.status !== 'succeeded') {
+      throw new Error('Timeout: Le traitement a pris trop de temps (>2min)');
+    }
+
+    const enhancedUrl = Array.isArray(prediction.output) 
+      ? prediction.output[0] 
+      : prediction.output;
+
+    if (!enhancedUrl) {
+      throw new Error('No output image received from Replicate');
+    }
+
+    console.log('✅ Image améliorée générée:', enhancedUrl);
+
+    // ============================================
+    // RETOUR RÉSULTAT
+    // ============================================
     return res.status(200).json({
       success: true,
-      output: enhancedImageUrl,
-      analysis: analysis,
+      output: enhancedUrl,
       prompt: enhancementPrompt
     });
 
   } catch (error) {
-    console.error('❌ Error in enhance API:', error);
+    console.error('❌ Erreur complète:', error);
     return res.status(500).json({ 
       error: error.message,
-      details: error.stack
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-}
-
-/**
- * Crée un prompt DALL-E 3 optimisé basé sur l'analyse
- */
-function createDALLEPrompt(analysis) {
-  let prompt = "Professional high-end real estate photography: ";
-
-  // Détecter le type de pièce
-  if (analysis.includes('bedroom')) {
-    prompt += "bright and inviting bedroom interior, ";
-  } else if (analysis.includes('living')) {
-    prompt += "spacious and welcoming living room, ";
-  } else if (analysis.includes('kitchen')) {
-    prompt += "modern and clean kitchen space, ";
-  } else if (analysis.includes('bathroom')) {
-    prompt += "pristine and bright bathroom, ";
-  } else if (analysis.includes('exterior')) {
-    prompt += "attractive property exterior view, ";
-  } else {
-    prompt += "well-presented interior space, ";
-  }
-
-  // Corrections de luminosité
-  if (analysis.includes('sombre') || analysis.includes('dark')) {
-    prompt += "perfectly lit with abundant natural light, bright and airy atmosphere, ";
-  } else if (analysis.includes('claire') || analysis.includes('bright')) {
-    prompt += "balanced natural lighting, well-exposed, ";
-  }
-
-  // Corrections de couleurs
-  if (analysis.includes('terne') || analysis.includes('dull') || analysis.includes('délavé')) {
-    prompt += "vibrant and appealing colors, warm and inviting tones, ";
-  } else if (analysis.includes('saturé')) {
-    prompt += "natural and balanced color palette, ";
-  }
-
-  // Corrections de netteté
-  if (analysis.includes('flou') || analysis.includes('blur')) {
-    prompt += "crystal clear details, sharp focus, ";
-  }
-
-  // Qualités professionnelles
-  prompt += "professional real estate photography, HDR quality, wide-angle perspective, ";
-  prompt += "magazine-worthy composition, pristine condition, ";
-  prompt += "attractive to potential buyers, real estate marketing photo, ";
-  prompt += "high-resolution architectural photography, perfectly staged and presented.";
-
-  return prompt;
 }
