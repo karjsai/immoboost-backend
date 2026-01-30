@@ -107,7 +107,7 @@ Réponds UNIQUEMENT avec le prompt optimisé, sans explication supplémentaire.`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: 'bea09cf018e513cef0841719f9d94e606c873a2e8a1f45d9c3cab4f6cecf97a7',
+        version: '788800a6d5c817e220012e34defbf42fe6d20f26fa6a9e7d4c8c5bb6ab49f9ea',
         input: {
           image: image,
           prompt: enhancementPrompt,
