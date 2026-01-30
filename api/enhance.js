@@ -107,7 +107,7 @@ Réponds UNIQUEMENT avec le prompt optimisé, sans explication supplémentaire.`
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        version: '788800a6d5c817e220012e34defbf42fe6d20f26fa6a9e7d4c8c5bb6ab49f9ea',
+        version: '6a52feace43ce1f6bbc2cdabfc68423cb2319d7444a1a1dae529c5e88b976382',
         input: {
           image: image,
           prompt: enhancementPrompt,
@@ -116,7 +116,7 @@ Réponds UNIQUEMENT avec le prompt optimisé, sans explication supplémentaire.`
           height: 1024,
           num_inference_steps: 30,
           guidance_scale: 7.5,
-          prompt_strength: 0.15,
+          strength: 0.15,
           scheduler: "DPMSolverMultistep",
           disable_safety_checker: true
         }
@@ -138,7 +138,7 @@ Réponds UNIQUEMENT avec le prompt optimisé, sans explication supplémentaire.`
     // POLLING POUR RÉSULTAT
     // ============================================
     let attempts = 0;
-    const maxAttempts = 60; // 2 minutes max
+    const maxAttempts = 60;
 
     while (
       prediction.status !== 'succeeded' && 
@@ -193,9 +193,6 @@ Réponds UNIQUEMENT avec le prompt optimisé, sans explication supplémentaire.`
 
     console.log('✅ Image améliorée générée:', enhancedUrl);
 
-    // ============================================
-    // RETOUR RÉSULTAT
-    // ============================================
     return res.status(200).json({
       success: true,
       output: enhancedUrl,
