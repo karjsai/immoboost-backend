@@ -1,7 +1,9 @@
 {
   "functions": {
     "api/enhance.js": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "memory": 1024,
+      "maxRequestBodySize": "10mb"
     }
   }
 }
