@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImmoBoost Pro</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #1e293b 0%, #6b21a8 50%, #1e293b 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header {
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            margin-bottom: 40px;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.3);
+        }
+        .header h1 { font-size: 28px; margin-bottom: 5px; }
+        .header p { color: #4ade80; font-size: 12px; }
+        .hero { text-align: center; padding: 40px 20px; }
+        .hero h2 { font-size: 36px; margin-bottom: 20px; line-height: 1.2; }
+        .gradient-text {
+            background: linear-gradient(to right, #c084fc, #f472b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .upload-box {
+            background: linear-gradient(135deg, #7c3aed, #db2777);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px auto;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .btn-upload {
+            background: white;
+            color: #7c3aed;
+            border: none;
+            padding: 20px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+        .btn-upload:hover { transform: scale(1.05); }
+        #fileInput { display: none; }
+        .processing {
+            display: none;
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .spinner {
+            width: 80px;
+            height: 80px;
+            border: 4px solid rgba(168, 85, 247, 0.3);
+            border-top-color: #a855f7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 30px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .results { display: none; margin-top: 40px; }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        @media (min-width: 768px) {
+            .comparison { grid-template-columns: 1fr 1fr; }
+        }
+        .image-box {
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            border: 2px solid rgba(168, 85, 247, 0.3);
+        }
+        .image-box img {
+            width: 100%;
+            border-radius: 12px;
+            display: block;
+        }
+        .label {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        .label-before {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid #ef4444;
+            color: #fca5a5;
+        }
+        .label-after {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid #22c55e;
+            color: #86efac;
+        }
+        .actions {
+            text-align: center;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(168, 85, 247, 0.3);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #22c55e, #10b981);
+            color: white;
+        }
+        .btn:hover { transform: translateY(-2px); }
+        .status-text {
+            font-size: 18px;
+            color: #c084fc;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>⚡ ImmoBoost Pro</h1>
+            <p>IA GPT-4 Vision + Juggernaut XL v7</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="uploadSection" class="hero">
+            <h2>
+                Transformez vos photos<br>
+                <span class="gradient-text">Vendez 3x plus vite</span>
+            </h2>
+            <p style="font-size: 18px; margin: 20px 0; color: #d1d5db;">
+                Analyse IA • Retouche intelligente • Qualité HD préservée
+            </p>
+
+            <div class="upload-box">
+                <input type="file" id="fileInput" accept="image/*">
+                <button class="btn-upload" onclick="document.getElementById('fileInput').click()">
+                    📤 Améliorer ma photo avec l'IA
+                </button>
+                <p style="margin-top: 20px; font-size: 14px; opacity: 0.9;">
+                    ✨ Traitement 30-40s • 🔒 Sécurisé • 💾 Qualité maximale
+                </p>
+            </div>
+        </div>
+
+        <div id="processingSection" class="processing">
+            <div class="spinner"></div>
+            <h2 style="font-size: 24px; margin-bottom: 10px;">⚡ IA en action...</h2>
+            <p id="statusText" class="status-text">📤 Chargement...</p>
+        </div>
+
+        <div id="resultsSection" class="results">
+            <div class="comparison">
+                <div class="image-box">
+                    <span class="label label-before">❌ AVANT</span>
+                    <img id="beforeImg" alt="Avant">
+                </div>
+                <div class="image-box">
+                    <span class="label label-after">✨ APRÈS - IA HD</span>
+                    <img id="afterImg" alt="Après">
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn btn-secondary" onclick="reset()">← Nouvelle photo</button>
+                <button class="btn btn-primary" onclick="download()">💾 Télécharger HD</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let originalImg = null;
+        let enhancedImg = null;
+
+        document.getElementById('fileInput').addEventListener('change', handleFile);
+
+        async function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) {
+                alert('⚠️ Veuillez sélectionner une image valide');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async (event) => {
+                const imageDataUrl = event.target.result;
+                
+                console.log('✅ Image chargée - AUCUNE compression');
+                
+                originalImg = imageDataUrl;
+                await processImage(imageDataUrl);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function processImage(imgData) {
+            showSection('processing');
+            updateStatus('📤 Envoi à l\'IA...');
+
+            try {
+                updateStatus('🤖 Analyse GPT-4 Vision...');
+                
+                const res = await fetch('/api/enhance', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({image: imgData})
+                });
+
+                if (!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(errorData.error || 'Erreur traitement');
+                }
+                
+                updateStatus('🎨 Amélioration Juggernaut XL v7...');
+                const {output} = await res.json();
+
+                enhancedImg = output;
+                showResults();
+            } catch (err) {
+                console.error('❌ Erreur complète:', err);
+                alert('❌ Erreur: ' + err.message);
+                reset();
+            }
+        }
+
+        function showSection(section) {
+            document.getElementById('uploadSection').style.display = section === 'upload' ? 'block' : 'none';
+            document.getElementById('processingSection').style.display = section === 'processing' ? 'block' : 'none';
+            document.getElementById('resultsSection').style.display = section === 'results' ? 'block' : 'none';
+        }
+
+        function updateStatus(text) {
+            document.getElementById('statusText').textContent = text;
+        }
+
+        function showResults() {
+            document.getElementById('beforeImg').src = originalImg;
+            document.getElementById('afterImg').src = enhancedImg;
+            showSection('results');
+        }
+
+        function download() {
+            const a = document.createElement('a');
+            a.href = enhancedImg;
+            a.download = 'immoboost-enhanced-hd.jpg';
+            a.click();
+        }
+
+        function reset() {
+            originalImg = null;
+            enhancedImg = null;
+            document.getElementById('fileInput').value = '';
+            showSection('upload');
+        }
+    </script>
+</body>
+</html>
